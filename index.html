@@ -1,181 +1,394 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Thank You 歌詞發音練習</title>
-<style>
-  :root { color-scheme: light dark; }
-  body {
-    margin: 0 auto; padding: 24px 16px 64px; max-width: 1080px;
-    font-family: system-ui, -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
-    line-height: 1.5;
-  }
-  h1 { font-size: 1.25rem; margin: 0 0 4px; }
-  .hint { color: #888; font-size: .9rem; margin: 0 0 28px; }
-  /* ponytail: auto-fit 就能自己換行，不用 media query */
-  .cols { display: grid; gap: 40px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
-  .notes h2 {
-    font-size: 1rem; margin: 0 0 20px; display: inline-block;
-    background: #9cff6b; color: #000; padding: 2px 8px; border-radius: 4px;
-  }
-  .notes h3 { font-size: 1.15rem; margin: 0 0 6px; }
-  .notes p { margin: 0 0 24px; font-size: .95rem; }
-  .notes ul { margin: 0; padding: 0; list-style: none; font-size: .95rem; }
-  .notes li { margin-bottom: 10px; }
-  .notes li b { font-weight: 700; }
-  .eg { background: #fff59d; color: #000; padding: 1px 5px; border-radius: 3px; }
-  .line { margin-bottom: 24px; }
-  button.all {
-    font-size: 1rem; background: #e8412f; color: #fff;
-    padding: 8px 18px; margin: 0 0 28px; border-radius: 999px;
-  }
-  button.all:hover { background: #c7321f; }
-  .zh { color: #888; font-size: 1rem; margin-top: 4px; }
-  button {
-    font: inherit; font-size: 1.35rem; font-weight: 700;
-    background: none; border: none; border-radius: 8px;
-    padding: 4px 6px; margin: 0 2px 4px 0; cursor: pointer;
-    color: inherit; text-align: left;
-  }
-  button:hover { background: rgba(127,127,127,.15); }
-  button.playing { background: #e8412f; color: #fff; }
-  button.playing .m { color: #fff; }
-  button.loading::after {
-    content: ""; display: inline-block; width: .7em; height: .7em; margin-left: 8px;
-    border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
-    vertical-align: -.05em; animation: spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .m { color: #e8412f; }
-</style>
-</head>
-<body>
-<h1>Thank You 歌詞發音練習</h1>
-<p class="hint">點任一句即可播放發音，再點一次可重播。</p>
-<button id="all" class="all">▶ 全曲播放</button>
-<button id="tempo" class="all" data-src="audio/With_tempo.m4a">▶ 跟著節奏一起念</button>
-<div class="cols">
-  <div id="lyrics"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thank You 歌詞發音練習</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0 auto;
+        padding: 24px 16px 64px;
+        max-width: 1080px;
+        font-family:
+          system-ui,
+          -apple-system,
+          "PingFang TC",
+          "Noto Sans TC",
+          sans-serif;
+        line-height: 1.5;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 4px;
+      }
+      .hint {
+        color: #888;
+        font-size: 0.9rem;
+        margin: 0 0 28px;
+      }
+      /* ponytail: auto-fit 就能自己換行，不用 media query */
+      .cols {
+        display: grid;
+        gap: 40px;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+      .notes h2 {
+        font-size: 1rem;
+        margin: 0 0 20px;
+        display: inline-block;
+        background: #9cff6b;
+        color: #000;
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+      .notes h3 {
+        font-size: 1.15rem;
+        margin: 0 0 6px;
+      }
+      .notes p {
+        margin: 0 0 24px;
+        font-size: 0.95rem;
+      }
+      .notes ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.95rem;
+      }
+      .notes li {
+        margin-bottom: 10px;
+      }
+      .notes li b {
+        font-weight: 700;
+      }
+      .eg {
+        background: #fff59d;
+        color: #000;
+        padding: 1px 5px;
+        border-radius: 3px;
+      }
+      .line {
+        margin: 0 0 16px -10px;
+        padding: 6px 10px;
+        border-radius: 12px;
+        transition: background 0.2s;
+      }
+      .line.now {
+        background: rgba(232, 65, 47, 0.14);
+      }
+      button.all {
+        font-size: 1rem;
+        background: #e8412f;
+        color: #fff;
+        padding: 8px 18px;
+        margin: 0 0 28px;
+        border-radius: 999px;
+      }
+      button.all:hover {
+        background: #c7321f;
+      }
+      .zh {
+        color: #888;
+        font-size: 1rem;
+        margin-top: 4px;
+      }
+      button.seek {
+        font-size: 0.8rem;
+        font-weight: 400;
+        color: #e8412f;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        padding: 0 10px;
+        margin: 0 0 0 8px;
+        vertical-align: 1px;
+      }
+      button {
+        font: inherit;
+        font-size: 1.35rem;
+        font-weight: 700;
+        background: none;
+        border: none;
+        border-radius: 8px;
+        padding: 4px 6px;
+        margin: 0 2px 4px 0;
+        cursor: pointer;
+        color: inherit;
+        text-align: left;
+      }
+      button:hover {
+        background: rgba(127, 127, 127, 0.15);
+      }
+      button.playing {
+        background: #e8412f;
+        color: #fff;
+      }
+      button.playing .m {
+        color: #fff;
+      }
+      button.loading::after {
+        content: "";
+        display: inline-block;
+        width: 0.7em;
+        height: 0.7em;
+        margin-left: 8px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        vertical-align: -0.05em;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .m {
+        color: #e8412f;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Thank You 歌詞發音練習</h1>
+    <p class="hint">點任一句即可播放發音，再點一次可重播。</p>
+    <button id="all" class="all">▶ 全曲播放</button>
+    <button id="tempo" class="all" data-src="audio/With_tempo.m4a">
+      ▶ 跟著節奏一起念
+    </button>
+    <div class="cols">
+      <div id="lyrics"></div>
 
-  <aside class="notes">
-    <h2>特殊發音</h2>
+      <aside class="notes">
+        <h2>特殊發音</h2>
 
-    <h3>ma<span class="m">lj</span>ima<span class="m">lj</span>i</h3>
-    <p>
-      <b class="m">Lj</b> /ʎ/（硬顎邊音，發音類似將舌面貼住上顎發出的「ㄉ」音）<br>
-      也可以想成用 “L” 跟 “J” 同時一起發音，<br>
-      或是大舌頭的方式發 “L” 的音。
-    </p>
+        <h3>ma<span class="m">lj</span>ima<span class="m">lj</span>i</h3>
+        <p>
+          <b class="m">Lj</b>
+          /ʎ/（硬顎邊音，發音類似將舌面貼住上顎發出的「ㄉ」音）<br />
+          也可以想成用 “L” 跟 “J” 同時一起發音，<br />
+          或是大舌頭的方式發 “L” 的音。
+        </p>
 
-    <h3><span class="m">tj</span>anuaken</h3>
-    <p>
-      <b class="m">tj</b> 發音時舌面要貼住上顎，聽起來介於「ㄉ」跟「ㄐ」之間的短促音。
-    </p>
+        <h3><span class="m">tj</span>anuaken</h3>
+        <p>
+          <b class="m">tj</b>
+          發音時舌面要貼住上顎，聽起來介於「ㄉ」跟「ㄐ」之間的短促音。
+        </p>
 
-    <ul>
-      <li><b>ng - /ŋ/</b> <span class="eg">angata, manguaqan</span>（ㄥ）</li>
-      <li><b>p - /b/</b> <span class="eg">papunasi, pakiumalj</span>（ㄅ）</li>
-      <li><b>t - /d/</b> <span class="eg">tua, temulu</span>（ㄉ）</li>
-      <li><b>k - /g/</b> <span class="eg">pakiumalj, tjanuaken</span>（ㄍ）</li>
-      <li><b>c - /ts/</b> <span class="eg">papupicul</span>（ㄘ）</li>
-    </ul>
-  </aside>
-</div>
+        <ul>
+          <li>
+            <b>ng - /ŋ/</b> <span class="eg">angata, manguaqan</span>（ㄥ）
+          </li>
+          <li>
+            <b>p - /b/</b> <span class="eg">papunasi, pakiumalj</span>（ㄅ）
+          </li>
+          <li><b>t - /d/</b> <span class="eg">tua, temulu</span>（ㄉ）</li>
+          <li>
+            <b>k - /g/</b> <span class="eg">pakiumalj, tjanuaken</span>（ㄍ）
+          </li>
+          <li><b>c - /ts/</b> <span class="eg">papupicul</span>（ㄘ）</li>
+        </ul>
+      </aside>
+    </div>
 
-<script>
-const LINES = [
-  [[["maljimalji,", "Malji.wav"], ["masalu angata,", "Masaluangata.wav"]], "真的很感謝每一位"],
-  [[["tua napapunasi,", "TuanaPapunasi.wav"], ["temulu tjanuaken.", "Temulu.wav"]], "完整我生命和教導我的人"],
-  [[["maljimalji,", "Malji.wav"], ["masalu angata,", "Masaluangata.wav"]], "真的很感謝每一位"],
-  [[["tua na pakiumalj,", "TuanaPakiumalj.wav"], ["kiljivak tjanuaken.", "Kiljivak.wav"]], "改變我和疼愛我的人"],
-  [[["tua napapumanguaqan", "Papumnaguaqan.wav"], ["tjanuaken,", "Tjanuaken.m4a"]], "那些給我美好機會的人"],
-  [[["tua napapulevan", "TuaNaPapulevan.wav"], ["tjanuaken,", "Tjanuaken.m4a"]], "那些讓我快樂的人"],
-  [[["tua napapupicul,", "TuanaPapupicul.wav"], ["nazemenger", "Naz.wav"], ["tjanuaken.", "Tjanuaken.m4a"]], "那些添加我力量、讚美欣賞我的人"],
-];
+    <script>
+      // [[句子, 音檔]...], 中文, [在 With_tempo.m4a 的開始秒, 結束秒]
+      const LINES = [
+        [
+          [
+            ["maljimalji,", "Malji.wav"],
+            ["masalu angata,", "Masaluangata.wav"],
+          ],
+          "真的很感謝每一位",
+          [4, 10],
+        ],
+        [
+          [
+            ["tua napapunasi,", "TuanaPapunasi.wav"],
+            ["temulu tjanuaken.", "Temulu.wav"],
+          ],
+          "完整我生命和教導我的人",
+          [10, 18],
+        ],
+        [
+          [
+            ["maljimalji,", "Malji.wav"],
+            ["masalu angata,", "Masaluangata.wav"],
+          ],
+          "真的很感謝每一位",
+          [18, 24],
+        ],
+        [
+          [
+            ["tua na pakiumalj,", "TuanaPakiumalj.wav"],
+            ["kiljivak tjanuaken.", "Kiljivak.wav"],
+          ],
+          "改變我和疼愛我的人",
+          [25, 32],
+        ],
+        [
+          [
+            ["tua napapumanguaqan", "Papumnaguaqan.wav"],
+            ["tjanuaken,", "Tjanuaken.m4a"],
+          ],
+          "那些給我美好機會的人",
+          [32, 36],
+        ],
+        [
+          [
+            ["tua napapulevan", "TuaNaPapulevan.wav"],
+            ["tjanuaken,", "Tjanuaken.m4a"],
+          ],
+          "那些讓我快樂的人",
+          [36, 40],
+        ],
+        [
+          [
+            ["tua napapupicul,", "TuanaPapupicul.wav"],
+            ["nazemenger", "Naz.wav"],
+            ["tjanuaken.", "Tjanuaken.m4a"],
+          ],
+          "那些添加我力量、讚美欣賞我的人",
+          [40, 46],
+        ],
+      ];
 
-const audio = new Audio();
-const buttons = [];
-let current = null;
-let autoIdx = -1; // 全曲播放中的位置，-1 = 沒在全曲播放
-const allBtn = document.getElementById("all");
-const tempoBtn = document.getElementById("tempo");
+      const audio = new Audio();
+      const buttons = [];
+      let current = null;
+      let autoIdx = -1; // 全曲播放中的位置，-1 = 沒在全曲播放
+      const allBtn = document.getElementById("all");
+      const tempoBtn = document.getElementById("tempo");
 
-// 讓目前播放中的按鈕回到沒在播的樣子
-function release() {
-  if (!current) return;
-  current.classList.remove("playing", "loading");
-  if (current === tempoBtn) tempoBtn.textContent = "▶ 跟著節奏一起念";
-}
+      // 讓目前播放中的按鈕回到沒在播的樣子
+      function release() {
+        if (!current) return;
+        current.classList.remove("playing", "loading");
+        if (current === tempoBtn) {
+          tempoBtn.textContent = "▶ 跟著節奏一起念";
+          highlight(null);
+        }
+      }
 
-function play(b) {
-  release();
-  current = b;
-  b.classList.add("playing", "loading");
-  audio.src = b.dataset.src;
-  audio.play();
-}
+      // 跟著節奏念的時候，把正在唱的那一句標起來
+      let nowLine = null;
+      function highlight(line) {
+        if (line === nowLine) return;
+        if (nowLine) nowLine.classList.remove("now");
+        nowLine = line;
+        if (line) {
+          line.classList.add("now");
+          line.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+      }
+      audio.addEventListener("timeupdate", () => {
+        if (current !== tempoBtn || !tempoBtn.classList.contains("playing")) return;
+        const t = audio.currentTime;
+        // 句子之間有 1 秒空檔，多撐 1 秒讓標示不會閃掉
+        const hit = lineEls.findLast(([, [a, b]]) => t >= a && t < b + 1);
+        highlight(hit ? hit[0] : null);
+      });
 
-function stopAll() {
-  autoIdx = -1;
-  allBtn.textContent = "▶ 全曲播放";
-}
+      function play(b) {
+        release();
+        current = b;
+        b.classList.add("playing", "loading");
+        audio.src = b.dataset.src;
+        audio.play();
+      }
 
-// 下載中/緩衝中顯示轉圈，真的開始出聲才拿掉
-audio.addEventListener("waiting", () => current.classList.add("loading"));
-audio.addEventListener("playing", () => current.classList.remove("loading"));
-audio.addEventListener("error", release);
+      function stopAll() {
+        autoIdx = -1;
+        allBtn.textContent = "▶ 全曲播放";
+      }
 
-audio.addEventListener("ended", () => {
-  release();
-  if (autoIdx < 0) return;
-  if (++autoIdx >= buttons.length) return stopAll();
-  const next = buttons[autoIdx];
-  next.scrollIntoView({ block: "center", behavior: "smooth" });
-  setTimeout(() => autoIdx >= 0 && play(next), 300); // 句與句之間停一下
-});
+      // 下載中/緩衝中顯示轉圈，真的開始出聲才拿掉
+      audio.addEventListener("waiting", () => current.classList.add("loading"));
+      audio.addEventListener("playing", () =>
+        current.classList.remove("loading"),
+      );
+      audio.addEventListener("error", release);
 
-allBtn.onclick = () => {
-  if (autoIdx >= 0) {
-    audio.pause();
-    release();
-    return stopAll();
-  }
-  autoIdx = 0;
-  allBtn.textContent = "■ 停止";
-  play(buttons[0]);
-};
+      audio.addEventListener("ended", () => {
+        release();
+        if (autoIdx < 0) return;
+        if (++autoIdx >= buttons.length) return stopAll();
+        const next = buttons[autoIdx];
+        next.scrollIntoView({ block: "center", behavior: "smooth" });
+        setTimeout(() => autoIdx >= 0 && play(next), 300); // 句與句之間停一下
+      });
 
-tempoBtn.onclick = () => {
-  const on = current === tempoBtn && tempoBtn.classList.contains("playing");
-  stopAll();
-  if (on) {
-    audio.pause();
-    return release();
-  }
-  play(tempoBtn);
-  tempoBtn.textContent = "■ 停止";
-};
+      allBtn.onclick = () => {
+        if (autoIdx >= 0) {
+          audio.pause();
+          release();
+          return stopAll();
+        }
+        autoIdx = 0;
+        allBtn.textContent = "■ 停止";
+        play(buttons[0]);
+      };
 
-const lyrics = document.getElementById("lyrics");
-for (const [phrases, zh] of LINES) {
-  const line = document.createElement("div");
-  line.className = "line";
-  for (const [text, file] of phrases) {
-    const b = document.createElement("button");
-    // ponytail: lj/tj 是常念錯的音，直接用 regex 標紅
-    b.innerHTML = text.replace(/[lt]j/g, m => `<span class="m">${m}</span>`);
-    b.dataset.src = "audio/" + file;
-    b.onclick = () => { stopAll(); play(b); };
-    buttons.push(b);
-    line.appendChild(b);
-  }
-  const p = document.createElement("div");
-  p.className = "zh";
-  p.textContent = zh;
-  line.appendChild(p);
-  lyrics.appendChild(line);
-}
-</script>
-</body>
+      tempoBtn.onclick = () => {
+        const on =
+          current === tempoBtn && tempoBtn.classList.contains("playing");
+        stopAll();
+        if (on) {
+          audio.pause();
+          return release();
+        }
+        play(tempoBtn);
+        tempoBtn.textContent = "■ 停止";
+      };
+
+      // 從節奏錄音的第 t 秒開始播；已經在播就直接跳過去
+      function tempoFrom(t) {
+        if (current !== tempoBtn || !tempoBtn.classList.contains("playing")) {
+          stopAll();
+          play(tempoBtn);
+          tempoBtn.textContent = "■ 停止";
+        }
+        if (audio.readyState > 0) audio.currentTime = t;
+        else
+          audio.addEventListener("loadedmetadata", () => (audio.currentTime = t), {
+            once: true,
+          });
+      }
+
+      const lyrics = document.getElementById("lyrics");
+      const lineEls = [];
+      for (const [phrases, zh, time] of LINES) {
+        const line = document.createElement("div");
+        line.className = "line";
+        for (const [text, file] of phrases) {
+          const b = document.createElement("button");
+          // ponytail: lj/tj 是常念錯的音，直接用 regex 標紅
+          b.innerHTML = text.replace(
+            /[lt]j/g,
+            (m) => `<span class="m">${m}</span>`,
+          );
+          b.dataset.src = "audio/" + file;
+          b.onclick = () => {
+            stopAll();
+            play(b);
+          };
+          buttons.push(b);
+          line.appendChild(b);
+        }
+        const p = document.createElement("div");
+        p.className = "zh";
+        p.textContent = zh;
+        const seek = document.createElement("button");
+        seek.className = "seek";
+        seek.textContent = "♪ 從這句跟著節奏念";
+        seek.onclick = () => tempoFrom(time[0]);
+        p.appendChild(seek);
+        line.appendChild(p);
+        lyrics.appendChild(line);
+        lineEls.push([line, time]);
+      }
+    </script>
+  </body>
 </html>
