@@ -41,6 +41,12 @@
   button:hover { background: rgba(127,127,127,.15); }
   button.playing { background: #e8412f; color: #fff; }
   button.playing .m { color: #fff; }
+  button.loading::after {
+    content: ""; display: inline-block; width: .7em; height: .7em; margin-left: 8px;
+    border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+    vertical-align: -.05em; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .m { color: #e8412f; }
 </style>
 </head>
@@ -94,9 +100,9 @@ let autoIdx = -1; // 全曲播放中的位置，-1 = 沒在全曲播放
 const allBtn = document.getElementById("all");
 
 function play(b) {
-  if (current) current.classList.remove("playing");
+  if (current) current.classList.remove("playing", "loading");
   current = b;
-  b.classList.add("playing");
+  b.classList.add("playing", "loading");
   audio.src = b.dataset.src;
   audio.play();
 }
@@ -106,8 +112,13 @@ function stopAll() {
   allBtn.textContent = "▶ 全曲播放";
 }
 
+// 下載中/緩衝中顯示轉圈，真的開始出聲才拿掉
+audio.addEventListener("waiting", () => current.classList.add("loading"));
+audio.addEventListener("playing", () => current.classList.remove("loading"));
+audio.addEventListener("error", () => current.classList.remove("playing", "loading"));
+
 audio.addEventListener("ended", () => {
-  current.classList.remove("playing");
+  current.classList.remove("playing", "loading");
   if (autoIdx < 0) return;
   if (++autoIdx >= buttons.length) return stopAll();
   const next = buttons[autoIdx];
@@ -118,7 +129,7 @@ audio.addEventListener("ended", () => {
 allBtn.onclick = () => {
   if (autoIdx >= 0) {
     audio.pause();
-    current.classList.remove("playing");
+    current.classList.remove("playing", "loading");
     return stopAll();
   }
   autoIdx = 0;
