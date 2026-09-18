@@ -79,6 +79,17 @@
       .line.now {
         background: rgba(232, 65, 47, 0.14);
       }
+      .w {
+        border-radius: 4px;
+        transition: background 0.1s;
+      }
+      .w.now {
+        background: #e8412f;
+        color: #fff;
+      }
+      .w.now .m {
+        color: #fff;
+      }
       button.all {
         font-size: 1rem;
         background: #e8412f;
@@ -194,7 +205,8 @@
     </div>
 
     <script>
-      // [[句子, 音檔]...], 中文, [在 With_tempo.m4a 的開始秒, 結束秒]
+      // [[句子, 音檔]...], 中文, [在 With_tempo.m4a 的開始秒, 結束秒], 可選：[每個字的開始秒...]
+      // 例：[4, 10], [4, 6.2, 8]]  → maljimalji 從 4 秒、masalu 從 6.2 秒、angata 從 8 秒（個數要跟字數一樣）
       const LINES = [
         [
           [
@@ -203,6 +215,7 @@
           ],
           "真的很感謝每一位",
           [4, 10],
+          [4, 6.2, 7.6],
         ],
         [
           [
@@ -211,6 +224,7 @@
           ],
           "完整我生命和教導我的人",
           [10, 18],
+          [10, 11.1, 13.6, 15],
         ],
         [
           [
@@ -219,6 +233,7 @@
           ],
           "真的很感謝每一位",
           [18, 24],
+          [18, 21, 22.2],
         ],
         [
           [
@@ -227,6 +242,7 @@
           ],
           "改變我和疼愛我的人",
           [25, 32],
+          [25, 26, 26.5, 28.5, 30],
         ],
         [
           [
@@ -235,6 +251,7 @@
           ],
           "那些給我美好機會的人",
           [32, 36],
+          [32, 33.5, 35.1],
         ],
         [
           [
@@ -243,6 +260,7 @@
           ],
           "那些讓我快樂的人",
           [36, 40],
+          [36.5, 37, 38.8],
         ],
         [
           [
@@ -252,6 +270,7 @@
           ],
           "那些添加我力量、讚美欣賞我的人",
           [40, 46],
+          [40, 40.9, 42.8, 44.9],
         ],
       ];
 
@@ -274,7 +293,13 @@
 
       // 跟著節奏念的時候，把正在唱的那一句標起來
       let nowLine = null;
-      function highlight(line) {
+      let nowWord = null;
+      function highlight(line, word = null) {
+        if (word !== nowWord) {
+          if (nowWord) nowWord.classList.remove("now");
+          if (word) word.classList.add("now");
+          nowWord = word;
+        }
         if (line === nowLine) return;
         if (nowLine) nowLine.classList.remove("now");
         nowLine = line;
@@ -283,13 +308,18 @@
           line.scrollIntoView({ block: "center", behavior: "smooth" });
         }
       }
-      audio.addEventListener("timeupdate", () => {
-        if (current !== tempoBtn || !tempoBtn.classList.contains("playing")) return;
+      // ponytail: 每一格畫面檢查一次（timeupdate 一秒只有 4 次，逐字會慢半拍）
+      (function tick() {
+        requestAnimationFrame(tick);
+        if (current !== tempoBtn || !tempoBtn.classList.contains("playing"))
+          return;
         const t = audio.currentTime;
         // 句子之間有 1 秒空檔，多撐 1 秒讓標示不會閃掉
         const hit = lineEls.findLast(([, [a, b]]) => t >= a && t < b + 1);
-        highlight(hit ? hit[0] : null);
-      });
+        if (!hit) return highlight(null);
+        const word = hit[2].findLast(([, start]) => t >= start);
+        highlight(hit[0], word ? word[0] : null);
+      })();
 
       function play(b) {
         release();
@@ -352,23 +382,47 @@
         }
         if (audio.readyState > 0) audio.currentTime = t;
         else
-          audio.addEventListener("loadedmetadata", () => (audio.currentTime = t), {
-            once: true,
-          });
+          audio.addEventListener(
+            "loadedmetadata",
+            () => (audio.currentTime = t),
+            {
+              once: true,
+            },
+          );
       }
 
       const lyrics = document.getElementById("lyrics");
       const lineEls = [];
-      for (const [phrases, zh, time] of LINES) {
+      // 每個字在節奏錄音裡的開始秒數。
+      // LINES 有第 4 欄（每個字的開始秒數陣列）就用它；
+      // 沒有的話，照母音數把整句時間分給每個字（估計值）
+      function wordTimes(line, [a, b], starts) {
+        const spans = [...line.querySelectorAll(".w")];
+        if (starts) return spans.map((w, i) => [w, starts[i]]);
+        const vowels = spans.map((w) => w.textContent.match(/[aeiou]/g).length);
+        const total = vowels.reduce((x, y) => x + y);
+        let acc = 0;
+        return spans.map((w, i) => {
+          const start = a + ((b - a) * acc) / total;
+          acc += vowels[i];
+          return [w, start];
+        });
+      }
+
+      for (const [phrases, zh, time, wordStarts] of LINES) {
         const line = document.createElement("div");
         line.className = "line";
         for (const [text, file] of phrases) {
           const b = document.createElement("button");
           // ponytail: lj/tj 是常念錯的音，直接用 regex 標紅
-          b.innerHTML = text.replace(
-            /[lt]j/g,
-            (m) => `<span class="m">${m}</span>`,
-          );
+          // 每個字包成 .w 讓節奏錄音可以逐字標示；lj/tj 標紅
+          b.innerHTML = text
+            .split(" ")
+            .map(
+              (w) =>
+                `<span class="w">${w.replace(/[lt]j/g, (m) => `<span class="m">${m}</span>`)}</span>`,
+            )
+            .join(" ");
           b.dataset.src = "audio/" + file;
           b.onclick = () => {
             stopAll();
@@ -387,7 +441,7 @@
         p.appendChild(seek);
         line.appendChild(p);
         lyrics.appendChild(line);
-        lineEls.push([line, time]);
+        lineEls.push([line, time, wordTimes(line, time, wordStarts)]);
       }
     </script>
   </body>
