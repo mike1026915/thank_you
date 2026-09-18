@@ -54,6 +54,7 @@
 <h1>Thank You 歌詞發音練習</h1>
 <p class="hint">點任一句即可播放發音，再點一次可重播。</p>
 <button id="all" class="all">▶ 全曲播放</button>
+<button id="tempo" class="all" data-src="audio/With_tempo.m4a">▶ 跟著節奏一起念</button>
 <div class="cols">
   <div id="lyrics"></div>
 
@@ -84,13 +85,13 @@
 
 <script>
 const LINES = [
-  [[["maljimalji,", "Malji"], ["masalu angata,", "Masaluangata"]], "真的很感謝每一位"],
-  [[["tua napapunasi,", "TuanaPapunasi"], ["temulu tjanuaken.", "Temulu"]], "完整我生命和教導我的人"],
-  [[["maljimalji,", "Malji"], ["masalu angata,", "Masaluangata"]], "真的很感謝每一位"],
-  [[["tua na pakiumalj,", "TuanaPakiumalj"], ["kiljivak tjanuaken.", "Kiljivak"]], "改變我和疼愛我的人"],
-  [[["tua napapumanguaqan tjanuaken,", "Papumnaguaqan"]], "那些給我美好機會的人"],
-  [[["tua napapulevan tjanuaken,", "TuaNaPapulevan"]], "那些讓我快樂的人"],
-  [[["tua napapupicul,", "TuanaPapupicul"], ["nazemenger tjanuaken.", "Naz"]], "那些添加我力量、讚美欣賞我的人"],
+  [[["maljimalji,", "Malji.wav"], ["masalu angata,", "Masaluangata.wav"]], "真的很感謝每一位"],
+  [[["tua napapunasi,", "TuanaPapunasi.wav"], ["temulu tjanuaken.", "Temulu.wav"]], "完整我生命和教導我的人"],
+  [[["maljimalji,", "Malji.wav"], ["masalu angata,", "Masaluangata.wav"]], "真的很感謝每一位"],
+  [[["tua na pakiumalj,", "TuanaPakiumalj.wav"], ["kiljivak tjanuaken.", "Kiljivak.wav"]], "改變我和疼愛我的人"],
+  [[["tua napapumanguaqan", "Papumnaguaqan.wav"], ["tjanuaken,", "Tjanuaken.m4a"]], "那些給我美好機會的人"],
+  [[["tua napapulevan", "TuaNaPapulevan.wav"], ["tjanuaken,", "Tjanuaken.m4a"]], "那些讓我快樂的人"],
+  [[["tua napapupicul,", "TuanaPapupicul.wav"], ["nazemenger", "Naz.wav"], ["tjanuaken.", "Tjanuaken.m4a"]], "那些添加我力量、讚美欣賞我的人"],
 ];
 
 const audio = new Audio();
@@ -98,9 +99,17 @@ const buttons = [];
 let current = null;
 let autoIdx = -1; // 全曲播放中的位置，-1 = 沒在全曲播放
 const allBtn = document.getElementById("all");
+const tempoBtn = document.getElementById("tempo");
+
+// 讓目前播放中的按鈕回到沒在播的樣子
+function release() {
+  if (!current) return;
+  current.classList.remove("playing", "loading");
+  if (current === tempoBtn) tempoBtn.textContent = "▶ 跟著節奏一起念";
+}
 
 function play(b) {
-  if (current) current.classList.remove("playing", "loading");
+  release();
   current = b;
   b.classList.add("playing", "loading");
   audio.src = b.dataset.src;
@@ -115,10 +124,10 @@ function stopAll() {
 // 下載中/緩衝中顯示轉圈，真的開始出聲才拿掉
 audio.addEventListener("waiting", () => current.classList.add("loading"));
 audio.addEventListener("playing", () => current.classList.remove("loading"));
-audio.addEventListener("error", () => current.classList.remove("playing", "loading"));
+audio.addEventListener("error", release);
 
 audio.addEventListener("ended", () => {
-  current.classList.remove("playing", "loading");
+  release();
   if (autoIdx < 0) return;
   if (++autoIdx >= buttons.length) return stopAll();
   const next = buttons[autoIdx];
@@ -129,12 +138,23 @@ audio.addEventListener("ended", () => {
 allBtn.onclick = () => {
   if (autoIdx >= 0) {
     audio.pause();
-    current.classList.remove("playing", "loading");
+    release();
     return stopAll();
   }
   autoIdx = 0;
   allBtn.textContent = "■ 停止";
   play(buttons[0]);
+};
+
+tempoBtn.onclick = () => {
+  const on = current === tempoBtn && tempoBtn.classList.contains("playing");
+  stopAll();
+  if (on) {
+    audio.pause();
+    return release();
+  }
+  play(tempoBtn);
+  tempoBtn.textContent = "■ 停止";
 };
 
 const lyrics = document.getElementById("lyrics");
@@ -145,7 +165,7 @@ for (const [phrases, zh] of LINES) {
     const b = document.createElement("button");
     // ponytail: lj/tj 是常念錯的音，直接用 regex 標紅
     b.innerHTML = text.replace(/[lt]j/g, m => `<span class="m">${m}</span>`);
-    b.dataset.src = "audio/" + file + ".wav";
+    b.dataset.src = "audio/" + file;
     b.onclick = () => { stopAll(); play(b); };
     buttons.push(b);
     line.appendChild(b);
