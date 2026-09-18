@@ -10,7 +10,7 @@
       }
       body {
         margin: 0 auto;
-        padding: 24px 16px 64px;
+        padding: clamp(16px, 4vh, 40px) 16px 12px;
         max-width: 1080px;
         font-family:
           system-ui,
@@ -20,24 +20,32 @@
           sans-serif;
         line-height: 1.5;
       }
+      /* 標題、說明一排，按鈕另一排 */
+      header {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: clamp(6px, 1.5vh, 24px);
+      }
       h1 {
         font-size: 1.25rem;
-        margin: 0 0 4px;
+        margin: 0 0 6px;
       }
       .hint {
         color: #888;
         font-size: 0.9rem;
-        margin: 0 0 28px;
+        margin: 0;
       }
       /* ponytail: auto-fit 就能自己換行，不用 media query */
       .cols {
         display: grid;
         gap: 40px;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
       }
       .notes h2 {
         font-size: 1rem;
-        margin: 0 0 20px;
+        margin: 0 0 clamp(8px, 2vh, 20px);
         display: inline-block;
         background: #9cff6b;
         color: #000;
@@ -49,7 +57,7 @@
         margin: 0 0 6px;
       }
       .notes p {
-        margin: 0 0 24px;
+        margin: 0 0 clamp(12px, 2.5vh, 24px);
         font-size: 0.95rem;
       }
       .notes ul {
@@ -59,7 +67,7 @@
         font-size: 0.95rem;
       }
       .notes li {
-        margin-bottom: 10px;
+        margin-bottom: clamp(4px, 1vh, 10px);
       }
       .notes li b {
         font-weight: 700;
@@ -70,11 +78,16 @@
         padding: 1px 5px;
         border-radius: 3px;
       }
+      /* 字級、間距跟著螢幕高度縮放，讓整首歌擠進一個畫面 */
       .line {
-        margin: 0 0 16px -10px;
-        padding: 6px 10px;
+        margin: 0 0 clamp(2px, 1vh, 16px) -10px;
+        padding: clamp(2px, 0.5vh, 6px) 10px;
         border-radius: 12px;
         transition: background 0.2s;
+      }
+      /* 按鈕有 6px 內距，往左拉回來，讓拼音跟中文左邊對齊（換行時也對齊） */
+      .line > button {
+        margin-left: -6px;
       }
       .line.now {
         background: rgba(232, 65, 47, 0.14);
@@ -94,17 +107,22 @@
         font-size: 1rem;
         background: #e8412f;
         color: #fff;
-        padding: 8px 18px;
-        margin: 0 0 28px;
+        padding: 4px 16px;
+        margin: 0;
         border-radius: 999px;
       }
       button.all:hover {
         background: #c7321f;
       }
+      #tempo {
+        background: #2b6fd6;
+      }
+      #tempo:hover {
+        background: #1f58b0;
+      }
       .zh {
         color: #888;
-        font-size: 1rem;
-        margin-top: 4px;
+        font-size: clamp(0.8rem, 2.2vh, 1rem);
       }
       button.seek {
         font-size: 0.8rem;
@@ -118,13 +136,13 @@
       }
       button {
         font: inherit;
-        font-size: 1.35rem;
+        font-size: clamp(1rem, 3.2vh, 1.35rem);
         font-weight: 700;
         background: none;
         border: none;
         border-radius: 8px;
-        padding: 4px 6px;
-        margin: 0 2px 4px 0;
+        padding: 0 6px;
+        margin: 0 2px 0 0;
         cursor: pointer;
         color: inherit;
         text-align: left;
@@ -162,12 +180,17 @@
     </style>
   </head>
   <body>
-    <h1>Thank You 歌詞發音練習</h1>
-    <p class="hint">點任一句即可播放發音，再點一次可重播。</p>
-    <button id="all" class="all">▶ 全曲播放</button>
-    <button id="tempo" class="all" data-src="audio/With_tempo.m4a">
-      ▶ 跟著節奏一起念
-    </button>
+    <header>
+      <div>
+        <h1>Thank You 歌詞發音練習</h1>
+        <p class="hint">點任一句即可播放發音，再點一次可重播。</p>
+      </div>
+      <div>
+        <button id="tempo" class="all" data-src="audio/With_tempo.m4a">
+          ▶ 跟著節奏一起念
+        </button>
+      </div>
+    </header>
     <div class="cols">
       <div id="lyrics"></div>
 
@@ -275,10 +298,7 @@
       ];
 
       const audio = new Audio();
-      const buttons = [];
       let current = null;
-      let autoIdx = -1; // 全曲播放中的位置，-1 = 沒在全曲播放
-      const allBtn = document.getElementById("all");
       const tempoBtn = document.getElementById("tempo");
 
       // 讓目前播放中的按鈕回到沒在播的樣子
@@ -329,11 +349,6 @@
         audio.play();
       }
 
-      function stopAll() {
-        autoIdx = -1;
-        allBtn.textContent = "▶ 全曲播放";
-      }
-
       // 下載中/緩衝中顯示轉圈，真的開始出聲才拿掉
       audio.addEventListener("waiting", () => current.classList.add("loading"));
       audio.addEventListener("playing", () =>
@@ -341,30 +356,11 @@
       );
       audio.addEventListener("error", release);
 
-      audio.addEventListener("ended", () => {
-        release();
-        if (autoIdx < 0) return;
-        if (++autoIdx >= buttons.length) return stopAll();
-        const next = buttons[autoIdx];
-        next.scrollIntoView({ block: "center", behavior: "smooth" });
-        setTimeout(() => autoIdx >= 0 && play(next), 300); // 句與句之間停一下
-      });
-
-      allBtn.onclick = () => {
-        if (autoIdx >= 0) {
-          audio.pause();
-          release();
-          return stopAll();
-        }
-        autoIdx = 0;
-        allBtn.textContent = "■ 停止";
-        play(buttons[0]);
-      };
+      audio.addEventListener("ended", release);
 
       tempoBtn.onclick = () => {
         const on =
           current === tempoBtn && tempoBtn.classList.contains("playing");
-        stopAll();
         if (on) {
           audio.pause();
           return release();
@@ -376,7 +372,6 @@
       // 從節奏錄音的第 t 秒開始播；已經在播就直接跳過去
       function tempoFrom(t) {
         if (current !== tempoBtn || !tempoBtn.classList.contains("playing")) {
-          stopAll();
           play(tempoBtn);
           tempoBtn.textContent = "■ 停止";
         }
@@ -424,11 +419,7 @@
             )
             .join(" ");
           b.dataset.src = "audio/" + file;
-          b.onclick = () => {
-            stopAll();
-            play(b);
-          };
-          buttons.push(b);
+          b.onclick = () => play(b);
           line.appendChild(b);
         }
         const p = document.createElement("div");
