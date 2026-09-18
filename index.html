@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>排灣族語歌詞發音練習</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0 auto; padding: 24px 16px 64px; max-width: 1080px;
+    font-family: system-ui, -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    line-height: 1.5;
+  }
+  h1 { font-size: 1.25rem; margin: 0 0 4px; }
+  .hint { color: #888; font-size: .9rem; margin: 0 0 28px; }
+  /* ponytail: auto-fit 就能自己換行，不用 media query */
+  .cols { display: grid; gap: 40px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .notes h2 {
+    font-size: 1rem; margin: 0 0 20px; display: inline-block;
+    background: #9cff6b; color: #000; padding: 2px 8px; border-radius: 4px;
+  }
+  .notes h3 { font-size: 1.15rem; margin: 0 0 6px; }
+  .notes p { margin: 0 0 24px; font-size: .95rem; }
+  .notes ul { margin: 0; padding: 0; list-style: none; font-size: .95rem; }
+  .notes li { margin-bottom: 10px; }
+  .notes li b { font-weight: 700; }
+  .eg { background: #fff59d; color: #000; padding: 1px 5px; border-radius: 3px; }
+  .line { margin-bottom: 24px; }
+  button.all {
+    font-size: 1rem; background: #e8412f; color: #fff;
+    padding: 8px 18px; margin: 0 0 28px; border-radius: 999px;
+  }
+  button.all:hover { background: #c7321f; }
+  .zh { color: #888; font-size: 1rem; margin-top: 4px; }
+  button {
+    font: inherit; font-size: 1.35rem; font-weight: 700;
+    background: none; border: none; border-radius: 8px;
+    padding: 4px 6px; margin: 0 2px 4px 0; cursor: pointer;
+    color: inherit; text-align: left;
+  }
+  button:hover { background: rgba(127,127,127,.15); }
+  button.playing { background: #e8412f; color: #fff; }
+  button.playing .m { color: #fff; }
+  .m { color: #e8412f; }
+</style>
+</head>
+<body>
+<h1>排灣族語歌詞發音練習</h1>
+<p class="hint">點任一句即可播放發音，再點一次可重播。</p>
+<button id="all" class="all">▶ 全曲播放</button>
+<div class="cols">
+  <div id="lyrics"></div>
+
+  <aside class="notes">
+    <h2>特殊發音</h2>
+
+    <h3>ma<span class="m">lj</span>ima<span class="m">lj</span>i</h3>
+    <p>
+      <b class="m">Lj</b> /ʎ/（硬顎邊音，發音類似將舌面貼住上顎發出的「ㄉ」音）<br>
+      也可以想成用 “L” 跟 “J” 同時一起發音，<br>
+      或是大舌頭的方式發 “L” 的音。
+    </p>
+
+    <h3><span class="m">tj</span>anuaken</h3>
+    <p>
+      <b class="m">tj</b> 發音時舌面要貼住上顎，聽起來介於「ㄉ」跟「ㄐ」之間的短促音。
+    </p>
+
+    <ul>
+      <li><b>ng - /ŋ/</b> <span class="eg">angata, manguaqan</span>（ㄥ）</li>
+      <li><b>p - /b/</b> <span class="eg">papunasi, pakiumalj</span>（ㄅ）</li>
+      <li><b>t - /d/</b> <span class="eg">tua, temulu</span>（ㄉ）</li>
+      <li><b>k - /g/</b> <span class="eg">pakiumalj, tjanuaken</span>（ㄍ）</li>
+      <li><b>c - /ts/</b> <span class="eg">papupicul</span>（ㄘ）</li>
+    </ul>
+  </aside>
+</div>
+
+<script>
+const LINES = [
+  [[["maljimalji,", "Malji"], ["masalu angata,", "Masaluangata"]], "真的很感謝每一位"],
+  [[["tua napapunasi,", "TuanaPapunasi"], ["temulu tjanuaken.", "Temulu"]], "完整我生命和教導我的人"],
+  [[["maljimalji,", "Malji"], ["masalu angata,", "Masaluangata"]], "真的很感謝每一位"],
+  [[["tua na pakiumalj,", "TuanaPakiumalj"], ["kiljivak tjanuaken.", "Kiljivak"]], "改變我和疼愛我的人"],
+  [[["tua napapumanguaqan tjanuaken,", "Papumnaguaqan"]], "那些給我美好機會的人"],
+  [[["tua napapulevan tjanuaken,", "TuaNaPapulevan"]], "那些讓我快樂的人"],
+  [[["tua napapupicul,", "TuanaPapupicul"], ["nazemenger tjanuaken.", "Naz"]], "那些添加我力量、讚美欣賞我的人"],
+];
+
+const audio = new Audio();
+const buttons = [];
+let current = null;
+let autoIdx = -1; // 全曲播放中的位置，-1 = 沒在全曲播放
+const allBtn = document.getElementById("all");
+
+function play(b) {
+  if (current) current.classList.remove("playing");
+  current = b;
+  b.classList.add("playing");
+  audio.src = b.dataset.src;
+  audio.play();
+}
+
+function stopAll() {
+  autoIdx = -1;
+  allBtn.textContent = "▶ 全曲播放";
+}
+
+audio.addEventListener("ended", () => {
+  current.classList.remove("playing");
+  if (autoIdx < 0) return;
+  if (++autoIdx >= buttons.length) return stopAll();
+  const next = buttons[autoIdx];
+  next.scrollIntoView({ block: "center", behavior: "smooth" });
+  setTimeout(() => autoIdx >= 0 && play(next), 300); // 句與句之間停一下
+});
+
+allBtn.onclick = () => {
+  if (autoIdx >= 0) {
+    audio.pause();
+    current.classList.remove("playing");
+    return stopAll();
+  }
+  autoIdx = 0;
+  allBtn.textContent = "■ 停止";
+  play(buttons[0]);
+};
+
+const lyrics = document.getElementById("lyrics");
+for (const [phrases, zh] of LINES) {
+  const line = document.createElement("div");
+  line.className = "line";
+  for (const [text, file] of phrases) {
+    const b = document.createElement("button");
+    // ponytail: lj/tj 是常念錯的音，直接用 regex 標紅
+    b.innerHTML = text.replace(/[lt]j/g, m => `<span class="m">${m}</span>`);
+    b.dataset.src = "audio/" + file + ".wav";
+    b.onclick = () => { stopAll(); play(b); };
+    buttons.push(b);
+    line.appendChild(b);
+  }
+  const p = document.createElement("div");
+  p.className = "zh";
+  p.textContent = zh;
+  line.appendChild(p);
+  lyrics.appendChild(line);
+}
+</script>
+</body>
+</html>
